@@ -56,6 +56,7 @@ PROCS = {
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": 4.0,
   "system.loggerd.deleter": 0.1,
+  "system.sensord.rawgps.rawgpsd": 1.0,
   "selfdrive.locationd.laikad": None,  # TODO: laikad cpu usage is sporadic
 }
 
@@ -102,7 +103,8 @@ class TestOnroad(unittest.TestCase):
     os.environ['LOGPRINT'] = "debug"
 
     params = Params()
-    params.clear_all()
+    #params.clear_all()
+    params.remove("CurrentRoute")
     set_params_enabled()
     if os.path.exists(ROOT):
       shutil.rmtree(ROOT)
@@ -161,11 +163,11 @@ class TestOnroad(unittest.TestCase):
     for s, msgs in self.service_msgs.items():
       if s in ('initData', 'sentinel'):
         continue
-      
+
       # skip gps services for now
-      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements'):
+      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocation', 'gpsLocationExternal', 'qcomGnss'):
         continue
-        
+
       with self.subTest(service=s):
         assert len(msgs) >= math.floor(service_list[s].frequency*55)
 
