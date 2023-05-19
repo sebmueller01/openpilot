@@ -153,7 +153,7 @@ pipeline {
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
-              ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+              ["onroad tests", "cd selfdrive/test/ && pytest -s test_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
             ])
           }
