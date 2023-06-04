@@ -100,7 +100,7 @@ class TestOnroad(unittest.TestCase):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      print(segs[-3])
+      print(segs[-1])
       cls.lr = list(LogReader(os.path.join(segs[-3], "rlog")))
       return
 
@@ -270,20 +270,28 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
     print(result)
 
-  @unittest.skip("TODO: enable once timings are fixed")
   def test_camera_frame_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"
     result += "-----------------  SoF Timing ------------------\n"
     result += "------------------------------------------------\n"
-    for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
-      ts = [getattr(getattr(m, m.which()), "timestampSof") for m in self.lr if name in m.which()]
+    for s in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
+      sensor = str(getattr(self.service_msgs[s][0], s).sensor)
+      ts = [getattr(getattr(m, m.which()), "timestampSof") for m in self.service_msgs[s]]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      self.assertLess(max(d50), 1.0, f"high sof delta vs 50ms: {max(d50)}")
-      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
+      with self.subTest(camera=s):
+        thresholds = {
+          "ar0231": 2.5,
+          "ox03c10": 3.5,
+        }
+        self.assertLess(d50.mean(), 0.1)
+        self.assertLess(max(d50), thresholds[sensor])
+
+      result += f"{s} {sensor}\n"
+      result += f"SOF delta vs 50ms: min  {min(d50):.5f}s\n"
+      result += f"SOF delta vs 50ms: max  {max(d50):.5f}s\n"
+      result += f"SOF delta vs 50ms: mean {d50.mean():.5f}s\n"
       result += "------------------------------------------------\n"
     print(result)
 
