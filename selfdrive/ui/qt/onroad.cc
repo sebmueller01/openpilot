@@ -84,8 +84,13 @@ void OnroadWindow::updateState(const UIState &s) {
     double tsm = (float)(nanos_since_boot() - sm["modelV2"].getLogMonoTime()) / 1e6;
     bool frame_id_matches = sm["roadCameraState"].getRoadCameraState().getFrameId() == sm["modelV2"].getModelV2().getFrameId();
     if (((tsm < 10) && frame_id_matches) || !sm.alive("modelV2") || (tsm > 10 * 1000.)) {
+      repaint();
       nvg->repaint();
+      if (map != nullptr) {
+        map->repaint();
+      }
     }
+    //printf("tsm %6.2fms %d\n", tsm, frame_id_matches);
   }
 }
 
