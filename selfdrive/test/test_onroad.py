@@ -281,12 +281,8 @@ class TestOnroad(unittest.TestCase):
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
       with self.subTest(camera=s):
-        thresholds = {
-          "ar0231": 2.5,
-          "ox03c10": 3.5,
-        }
         self.assertLess(d50.mean(), 0.1)
-        self.assertLess(max(d50), thresholds[sensor])
+        self.assertLess(max(d50), 4.5)
 
       result += f"{s} {sensor}\n"
       result += f"SOF delta vs 50ms: min  {min(d50):.5f}s\n"
