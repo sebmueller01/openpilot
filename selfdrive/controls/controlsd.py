@@ -371,6 +371,7 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
+    """
     if not self.sm['liveParameters'].valid and not TESTING_CLOSET:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
@@ -382,6 +383,7 @@ class Controls:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
+    """
 
     if not REPLAY:
       # Check for mismatch between openpilot and car's PCM
