@@ -3,7 +3,7 @@ from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.ford.values import CANBUS, DBC, CarControllerParams
+from selfdrive.car.ford.values import CANBUS, CANFD_CARS, DBC, CarControllerParams
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -211,7 +211,12 @@ class CarState(CarStateBase):
         ("Side_Detect_R_Stat", 5),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.main)
+    # on CAN FD cars, use auxiliary panda
+    bus = CANBUS.main
+    if CP.carFingerprint in CANFD_CARS:
+      bus += 4
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -268,4 +273,9 @@ class CarState(CarStateBase):
       ("IPMA_Data", 1),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.camera)
+    # on CAN FD cars, use auxiliary panda
+    bus = CANBUS.camera
+    if CP.carFingerprint in CANFD_CARS:
+      bus += 4
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)

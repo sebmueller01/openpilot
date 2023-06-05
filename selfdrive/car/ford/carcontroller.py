@@ -106,6 +106,10 @@ class CarController:
     self.lkas_enabled_last = CC.latActive
     self.steer_alert_last = steer_alert
 
+    # on CAN FD cars, send messages on auxiliary panda
+    if self.CP.carFingerprint in CANFD_CARS:
+      can_sends = [[addr, t, dat, bus + 4] for (addr, t, dat, bus) in can_sends]
+
     new_actuators = actuators.copy()
     new_actuators.curvature = self.apply_curvature_last
 
