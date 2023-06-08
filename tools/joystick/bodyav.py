@@ -41,7 +41,7 @@ def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   transceiver.setCodecPreferences(codec)
 
 
-class BodyVideo(VideoStreamTrack):
+class BodyVideo2(VideoStreamTrack):
   def __init__(self, app):
     super().__init__()
     self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
@@ -74,6 +74,59 @@ class BodyVideo(VideoStreamTrack):
     pts, time_base = await self.next_timestamp()
     frame.pts = pts
     frame.time_base = time_base
+    return frame
+  
+  
+import av
+import cereal.messaging as messaging
+
+W, H = 1928, 1208
+V4L2_BUF_FLAG_KEYFRAME = 8
+
+class BodyVideo(VideoStreamTrack):
+  def __init__(self, app):
+    super().__init__()
+    self.codec = av.CodecContext.create("hevc", "r")
+    os.environ["ZMQ"] = "1"
+    messaging.context = messaging.Context()
+    self.sock_name = "roadEncodeData"
+
+    self.sock = messaging.sub_sock(self.sock_name, None, conflate=False)
+    self.cnt = 0
+    self.last_idx = -1
+    self.seen_iframe = False
+    self.time_q = []
+    self.app = app
+
+  async def recv(self):
+    pts, time_base = await self.next_timestamp()
+    frame = None
+    while frame is None:
+      msgs = messaging.drain_sock(self.sock, wait_for_one=True)
+      for evt in msgs:
+        evta = getattr(evt, evt.which())
+        if evta.idx.encodeId != 0 and evta.idx.encodeId != (self.last_idx+1):
+          print("DROP PACKET!")
+        self.last_idx = evta.idx.encodeId
+        if not self.seen_iframe and not (evta.idx.flags & V4L2_BUF_FLAG_KEYFRAME):
+          print("waiting for iframe")
+          continue
+        self.time_q.append(time.monotonic())
+
+        # put in header (first)
+        if not self.seen_iframe:
+          self.codec.decode(av.packet.Packet(evta.header))
+          self.seen_iframe = True
+
+        frames = self.codec.decode(av.packet.Packet(evta.data))
+        if len(frames) == 0:
+          print("DROP SURFACE")
+          continue
+        assert len(frames) == 1
+
+        frame = frames[0]
+        frame.pts = pts
+        frame.time_base = time_base
     return frame
 
 
